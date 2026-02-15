@@ -1,0 +1,52 @@
+<html>
+<head>
+<title>console.sql</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #8c8c8c; font-style: italic;}
+.s1 { color: #080808;}
+.s2 { color: #0033b3;}
+.s3 { color: #067d17;}
+.s4 { color: #1750eb;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+console.sql</font>
+</center></td></tr></table>
+<pre><span class="s0">-- Seleccionamos todas las columnas que nos son necesarias por la información que tienen</span>
+<span class="s2">SELECT</span>
+  <span class="s1">tracks.rowid,</span>
+  <span class="s1">tracks.external_id_isrc </span><span class="s2">AS </span><span class="s1">isrc,</span>
+  <span class="s1">tracks.name </span><span class="s2">AS </span><span class="s1">track_name,</span>
+  <span class="s1">tracks.id </span><span class="s2">AS </span><span class="s1">track_id,</span>
+  <span class="s1">tracks.popularity,</span>
+  <span class="s1">tracks.duration_ms,</span>
+  <span class="s1">tracks.explicit,</span>
+  <span class="s1">albums.name </span><span class="s2">AS </span><span class="s1">album_name,</span>
+  <span class="s1">albums.album_type,</span>
+  <span class="s1">albums.release_date,</span>
+  <span class="s1">albums.rowid </span><span class="s2">AS </span><span class="s1">album_rowid,</span>
+  <span class="s1">albums.id </span><span class="s2">AS </span><span class="s1">album_id,</span>
+  <span class="s0">-- Obtener todos los nombres e ID de artistas como matriz JSON de objetos</span>
+  <span class="s1">(</span><span class="s2">SELECT </span><span class="s1">json_group_array(json_object(</span><span class="s3">'name'</span><span class="s1">, artists.name, </span><span class="s3">'id'</span><span class="s1">, artists.id))</span>
+   <span class="s2">FROM </span><span class="s1">track_artists</span>
+   <span class="s2">JOIN </span><span class="s1">artists </span><span class="s2">ON </span><span class="s1">artists.rowid = track_artists.artist_rowid</span>
+   <span class="s2">WHERE </span><span class="s1">track_artists.track_rowid = tracks.rowid) </span><span class="s2">AS </span><span class="s1">artist_names,</span>
+  <span class="s0">-- Obtener todos los ID de pista con el mismo ISRC (duplicados) como matriz JSON</span>
+  <span class="s1">(</span><span class="s2">SELECT </span><span class="s1">json_group_array(t2.id)</span>
+   <span class="s2">FROM </span><span class="s1">tracks t2</span>
+   <span class="s2">WHERE </span><span class="s1">t2.external_id_isrc = tracks.external_id_isrc) </span><span class="s2">AS </span><span class="s1">copies</span>
+<span class="s2">FROM </span><span class="s1">tracks</span>
+<span class="s0">-- Hacemos un inner join entre tracks y albums usando el ID del álbum</span>
+<span class="s2">INNER JOIN </span><span class="s1">albums </span><span class="s2">ON </span><span class="s1">tracks.album_rowid = albums.rowid</span>
+<span class="s0">-- Filtrar solo las pistas que tienen un código ISRC asignado</span>
+<span class="s2">WHERE </span><span class="s1">tracks.external_id_isrc </span><span class="s2">IS NOT NULL</span>
+<span class="s0">-- Ordena por popularidad descendente (los más populares primero)</span>
+<span class="s2">ORDER BY </span><span class="s1">tracks.popularity </span><span class="s2">DESC</span>
+<span class="s0">-- Limita el resultado a 100.000 registros</span>
+<span class="s2">LIMIT </span><span class="s4">100000</span><span class="s1">;</span></pre>
+</body>
+</html>
